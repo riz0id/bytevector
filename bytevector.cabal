@@ -1,0 +1,111 @@
+cabal-version: 2.4
+
+name:    bytevector
+version: 0.1.0.0
+
+author:     jake
+maintainer: jacobleach@protonmail.com
+
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
+common common
+  default-language: Haskell2010
+
+  default-extensions:
+    BangPatterns BlockArguments DataKinds DerivingVia ExplicitNamespaces GADTs
+    ImportQualifiedPost KindSignatures LambdaCase MagicHash PatternSynonyms
+    PolyKinds RankNTypes RoleAnnotations ScopedTypeVariables
+    StandaloneKindSignatures TupleSections TypeApplications ViewPatterns
+    UnboxedTuples UnliftedNewtypes
+
+  ghc-options:
+    -Wall
+    -Wcompat
+    -Wincomplete-record-updates
+    -Wincomplete-uni-patterns
+    -Wredundant-constraints
+
+    -- debug
+    -dsuppress-module-prefixes
+    -- -dsuppress-stg-exts
+    -dppr-cols=120
+    -- -ddump-simpl
+    -- -ddump-stg-final
+    -- -ddump-asm
+
+    -- optimizer
+    -O2
+    -- -fmax-simplifier-iterations=20
+    -- -j
+    -- -fasm-shortcutting
+    -fsimplifier-phases=20
+    -fexpose-all-unfoldings
+    -ffun-to-thunk
+    -flate-dmd-anal
+    -fpedantic-bottoms
+    -fspec-constr-keen
+    -fspecialise-aggressively
+    -fstatic-argument-transformation
+
+  build-depends:
+    , base
+    , containers
+    , ghc-prim
+    , primitive
+    , vector
+
+library
+  import:         common
+  hs-source-dirs: src
+
+  exposed-modules:
+    Data.ByteVector
+    Data.ByteVector.Mutable
+    Data.ByteVector.Mutable.Unboxed
+    Data.ByteVector.Unboxed
+    Data.ByteVector.Rep
+    Data.Int.Unboxed
+    -- Data.Word.Unboxed
+
+executable bytevector-example
+  main-is:        Main.hs
+  hs-source-dirs: example
+
+  ghc-options:
+    -Wall
+    -O2
+
+    -- debug
+    -dsuppress-module-prefixes
+    -- -dsuppress-stg-exts
+    -dppr-cols=120
+    -- -ddump-simpl
+    -ddump-stg-final
+
+  build-depends:
+    , base
+    , bytevector
+
+  other-modules:
+
+test-suite test
+  import:         common
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is:        Test.hs
+
+  build-depends:
+    , bytevector
+    , hedgehog
+    , tasty
+    , tasty-hedgehog
+
+  other-modules:
+    Test.Data.ByteVector
+    Test.Data.ByteVector.Conversion
+    Test.Data.ByteVector.Gen
+    Test.Data.Int.Gen
+    Test.Data.Int.Unboxed
+    Test.Gen

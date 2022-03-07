@@ -1,0 +1,6 @@
+cradle:
+  cabal:
+    - path: "./src"
+      component: "lib:bytevector"
+    - path: "./test"
+      component: "test:bytevector"

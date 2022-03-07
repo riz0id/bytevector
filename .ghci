@@ -1,0 +1,5 @@
+-- Basic verbosity
+:set -v1
+
+-- Compile to object code
+:set -fwrite-interface -fobject-code
