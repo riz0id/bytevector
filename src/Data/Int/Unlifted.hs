@@ -1,11 +1,13 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE MagicHash #-}
 
--- | Fast primitive operations on unboxed integers.
+-- | Fast primitive operations on unlifted integers.
 --
 -- @since 1.0.0
-module Data.Int.Unboxed
-  ( -- *
+module Data.Int.Unlifted
+  ( -- * Byte
+    bytesInWord,
+    ceilBytesToWord,
     ceilBytesToWord#,
     bytesToWords#,
 
@@ -28,11 +30,19 @@ import GHC.Exts
 -- | TODO:
 --
 -- @since 1.0.0
+bytesInWord :: Int
+bytesInWord = bitsInWord `quot` 8
+
+ceilBytesToWord :: Int -> Int
+ceilBytesToWord (I# x) = I# (ceilBytesToWord# x)
+
+-- | TODO:
+--
+-- @since 1.0.0
 ceilBytesToWord# :: Int# -> Int#
 ceilBytesToWord# x =
-  let (I# s) = word'bytes
+  let !(I# s) = bytesInWord
    in bytesToWords# x *# s
-{-# INLINE CONLIKE [0] ceilBytesToWord# #-}
 
 -- | Converts a unit in number of bytes to number of words. The provided number
 -- must be positive to yield a correct result.
@@ -50,9 +60,9 @@ ceilBytesToWord# x =
 --
 -- @since 1.0.0
 bytesToWords# :: Int# -> Int#
-bytesToWords# n = case word'bytes of
-  I# s -> quotInt# (n +# s -# 1#) s
-{-# INLINE CONLIKE [0] bytesToWords# #-}
+bytesToWords# n =
+  let !(I# s) = bytesInWord
+   in quotInt# (n +# s -# 1#) s
 
 --------------------------------------------------------------------------------
 -- Minimum & Maximum
@@ -68,7 +78,6 @@ bytesToWords# n = case word'bytes of
 -- @since 1.0.0
 posInt# :: Int# -> Int#
 posInt# x = andI# x (shiftIWordR# (notI# x))
-{-# INLINE CONLIKE [0] posInt# #-}
 
 -- | Compute the maximum of two unboxed integers without branching. @maxInt a b@
 -- is only defined if integers @a@, @b@, satisify the precondition:
@@ -100,8 +109,6 @@ maxInt# a b =
 negInt# :: Int# -> Int#
 negInt# x = andI# x (shiftIWordR# x)
 
-{-# INLINE CONLIKE [0] negInt# #-}
-
 -- | Compute the maximum of two unboxed integers without branching. For integers
 -- @a@ and @b@, @minInt a b@ /must/ satisify the precondition:
 --
@@ -126,34 +133,22 @@ minInt# a b =
 -- See [NOTE: Word size constant folding]
 #if (WORD_SIZE_IN_BITS == 64)
 
-#define WORD_SIZE_IN_BYTES 4
-
-word'bits :: Int
-word'bits = 64
-{-# INLINE CONLIKE [0] word'bits #-}
-
-word'bytes :: Int
-word'bytes = 8
-{-# INLINE CONLIKE [0] word'bytes #-}
+bitsInWord :: Int
+bitsInWord = 64
+{-# INLINE CONLIKE [0] bitsInWord #-}
 
 #elif (WORD_SIZE_IN_BITS == 32)
 
-#define WORD_SIZE_IN_BYTES 4#
-
-word'bits :: Int
-word'bits = 32
-{-# INLINE CONLIKE [0] word'bits #-}
-
-word'bytes :: Int
-word'bytes = 4
-{-# INLINE CONLIKE [0] word'bytes #-}
+bitsInWord :: Int
+bitsInWord = 32
+{-# INLINE CONLIKE [0] bitsInWord #-}
 
 #else
 # error bytevector depends on 32-bit or 64-bit integers
 #endif
 
 shiftIWordR# :: Int# -> Int#
-shiftIWordR# x = case word'bits of
+shiftIWordR# x = case bitsInWord of
   I# s -> uncheckedIShiftRA# x (s -# 1#)
 {-# INLINE CONLIKE [0] shiftIWordR# #-}
 

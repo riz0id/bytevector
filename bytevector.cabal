@@ -37,17 +37,16 @@ common common
 
     -- optimizer
     -O2
+    -fsimplifier-phases=20
+
     -- -fmax-simplifier-iterations=20
     -- -j
     -- -fasm-shortcutting
-    -fsimplifier-phases=20
-    -fexpose-all-unfoldings
-    -ffun-to-thunk
-    -flate-dmd-anal
-    -fpedantic-bottoms
-    -fspec-constr-keen
-    -fspecialise-aggressively
-    -fstatic-argument-transformation
+    -- -ffun-to-thunk
+    -- -flate-dmd-anal
+    -- -fpedantic-bottoms
+    -- -fspec-constr-keen
+    -- -fstatic-argument-transformation
 
   build-depends:
     , base
@@ -61,13 +60,12 @@ library
   hs-source-dirs: src
 
   exposed-modules:
-    Data.ByteVector
     Data.ByteVector.Mutable
-    Data.ByteVector.Mutable.Unboxed
-    Data.ByteVector.Unboxed
-    Data.ByteVector.Rep
-    Data.Int.Unboxed
-    -- Data.Word.Unboxed
+    Data.ByteVector.Mutable.Struct
+    Data.ByteVector.Mutable.Struct.Rep
+    Data.ByteVector.Mutable.Struct.Unlifted
+    Data.ByteVector.Mutable.Unlifted
+    Data.Int.Unlifted
 
 executable bytevector-example
   main-is:        Main.hs

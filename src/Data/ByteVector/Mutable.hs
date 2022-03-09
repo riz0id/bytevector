@@ -1,194 +1,138 @@
 {-# LANGUAGE MagicHash #-}
 
--- |
+-- | TODO:
+--
+-- @since 1.0.0
 module Data.ByteVector.Mutable
   ( -- * Mutable ByteVector
     ByteVector (ByteVector),
-
-    -- ** Construction
-    empty,
-
-    -- ** Read
-    readW,
-    readW8,
-    readW16,
-    readW32,
-    readW64,
-
-    -- ** Write
-    writeW,
-
-    -- ** Query
-    size,
+    sizeof,
     capacity,
-
-    -- ** Packing
-    packW,
-    packW8,
-    -- packW16,
-    -- packW32,
-    -- packW64,
-
-    -- ** Packing
-    pushW8,
-
-    -- ** Unpacking
-    unpackW8,
-
-    -- ** Conversion
-    toByteArray,
+    new,
+    empty,
+    resize,
+    set,
+    get,
+    pushback,
+    pack,
   )
 where
 
-import Data.Primitive (ByteArray (ByteArray))
-import GHC.ST
+import Control.Monad.Primitive
+import Data.Foldable (traverse_)
+import Data.Primitive
 import GHC.Exts
-import GHC.Word
 
-import Data.ByteVector.Mutable.Unboxed
+import Data.ByteVector.Mutable.Unlifted
 
 --------------------------------------------------------------------------------
 
+-- | TODO:
+--
+-- @since 1.0.0
 data ByteVector s = ByteVector (ByteVector# s)
 
 -- | TODO:
 --
 -- @since 1.0.0
-capacity :: ByteVector s -> Int
-capacity (ByteVector bs) = I# (capacity# bs)
-{-# INLINE CONLIKE capacity #-}
+sizeof :: PrimMonad m => ByteVector (PrimState m) -> m Int
+sizeof (ByteVector xs) =
+  primitive \st ->
+    let !(# st', s #) = sizeof# xs st
+     in (# st', I# s #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-size :: ByteVector s -> Int
-size (ByteVector bs) = I# (size# bs)
-{-# INLINE CONLIKE size #-}
-
---------------------------------------------------------------------------------
--- Construction
-
--- | TODO:
---
--- @since 1.0.0
-empty :: ST s (ByteVector s)
-empty = ST \st -> case empty# st of
-  (# st', bs #) -> (# st', ByteVector bs #)
-{-# INLINE CONLIKE empty #-}
-
---------------------------------------------------------------------------------
--- Read
+capacity :: PrimMonad m => ByteVector (PrimState m) -> m Int
+capacity (ByteVector xs) =
+  primitive \st ->
+    let !(# st', c #) = capacity# xs st
+     in (# st', I# c #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-readW :: Int -> ByteVector s -> ST s Word
-readW (I# i) (ByteVector bs) =
-  ST \st -> case readW# bs i st of
-    (# st', x #) -> (# st', W# x #)
+empty :: PrimMonad m => m (ByteVector (PrimState m))
+empty =
+  primitive \st ->
+    let !(# st', vec #) = empty# st
+     in (# st', ByteVector vec #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-readW8 :: Int -> ByteVector s -> ST s Word8
-readW8 (I# i) (ByteVector bs) =
-  ST \st -> case readW8# bs i st of
-    (# st', x #) -> (# st', W8# x #)
+new :: PrimMonad m => Int -> m (ByteVector (PrimState m))
+new (I# len) =
+  primitive \st ->
+    let !(# st', vec #) = new# len st
+     in (# st', ByteVector vec #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-readW16 :: Int -> ByteVector s -> ST s Word16
-readW16 (I# i) (ByteVector bs) =
-  ST \st -> case readW16# bs i st of
-    (# st', x #) -> (# st', W16# x #)
+resize :: PrimMonad m => Int -> ByteVector (PrimState m) -> m ()
+resize (I# len) (ByteVector xs) =
+  primitive \st ->
+    let st' = resize# len xs st
+     in (# st', () #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-readW32 :: Int -> ByteVector s -> ST s Word32
-readW32 (I# i) (ByteVector bs) =
-  ST \st -> case readW32# bs i st of
-    (# st', x #) -> (# st', W32# x #)
+set :: (PrimMonad m, Prim a) => Int -> a -> ByteVector (PrimState m) -> m ()
+set (I# i) x (ByteVector xs) =
+  primitive \st ->
+    let st' = set# i x xs st
+     in (# st', () #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-readW64 :: Int -> ByteVector s -> ST s Word64
-readW64 (I# i) (ByteVector bs) =
-  ST \st -> case readW64# bs i st of
-    (# st', x #) -> (# st', W64# x #)
-
---------------------------------------------------------------------------------
--- Modification
+get :: (PrimMonad m, Prim a) => Int -> ByteVector (PrimState m) -> m a
+get (I# i) (ByteVector xs) = primitive (get# i xs)
 
 -- | TODO:
 --
 -- @since 1.0.0
-writeW :: ByteVector s -> Int -> Word -> ST s ()
-writeW (ByteVector bs) (I# i) (W# x) =
-  ST \s -> case writeW# bs i x s of
-    st' -> (# st', () #)
-
---------------------------------------------------------------------------------
--- Packing
-
-pushW8 :: ByteVector s -> Word8 -> ST s (ByteVector s)
-pushW8 (ByteVector bs) (W8# x) =
-  ST \st -> case pushW8# bs x st of
-    (# st', bs' #) -> (# st', ByteVector bs' #)
-
---------------------------------------------------------------------------------
--- Packing
+pushback :: (PrimMonad m, Prim a) => a -> ByteVector (PrimState m) -> m ()
+pushback x (ByteVector vec) = primitive \st -> (# pushback# x vec st, () #)
 
 -- | TODO:
 --
 -- @since 1.0.0
-packW :: [Word] -> ST s (ByteVector s)
-packW ws = ST \st -> case packW# ws st of
-  (# st', bs #) -> (# st', ByteVector bs #)
-
--- | TODO:
---
--- @since 1.0.0
-packW8 :: [Word8] -> ST s (ByteVector s)
-packW8 ws = ST \st -> case packW8# ws st of
-  (# st', bs #) -> (# st', ByteVector bs #)
+pack :: (PrimMonad m, Prim a) => [a] -> m (ByteVector (PrimState m))
+pack = \case
+  [] -> empty
+  x0 : xs0 -> do
+    vec <- new (sizeOf x0 + quot (sizeOf x0) 2)
+    traverse_ (`pushback` vec) (x0 : xs0)
+    pure vec
 
 -- -- | TODO:
 -- --
 -- -- @since 1.0.0
--- packW16 :: [Word8] -> ST s (ByteVector s)
--- packW16 ws = ST \st -> case packW16# ws st of
---   (# st', bs #) -> (# st', ByteVector bs #)
+-- avaliable :: PrimMonad m => ByteVector (PrimState m) -> m Int
+-- avaliable vec = do
+--   capacity <- allocated vec
+--   stored <- size vec
+--   pure (max (capacity - stored) 0)
 
 -- -- | TODO:
 -- --
 -- -- @since 1.0.0
--- packW32 :: [Word] -> ST s (ByteVector s)
--- packW32 ws = ST \st -> case packW# ws st of
---   (# st', bs #) -> (# st', ByteVector bs #)
+-- compact :: PrimMonad m => ByteVector (PrimState m) -> m ()
+-- compact (ByteVector var) = do
+--   (len, mut) <- readMutVar var
+--   mut' <- resizeMutableByteArray mut (ceilBytesToWord len)
+--   writeMutVar var (len, mut')
 
 -- -- | TODO:
 -- --
 -- -- @since 1.0.0
--- packW64 :: [Word8] -> ST s (ByteVector s)
--- packW64 ws = ST \st -> case packW8# ws st of
---   (# st', bs #) -> (# st', ByteVector bs #)
-
---------------------------------------------------------------------------------
--- Unpacking
-
-unpackW8 :: ByteVector s -> ST s [Word8]
-unpackW8 (ByteVector bs) = ST (unpackW8# bs)
-
---------------------------------------------------------------------------------
--- Conversion
-
--- | TODO:
---
--- @since 1.0.0
-toByteArray :: ByteVector s -> ST s ByteArray
-toByteArray (ByteVector bs) =
-  ST \st -> case toByteArray# bs st of
-    (# st', array #) -> (# st' , ByteArray array #)
+-- unpack :: PrimMonad m => ByteVector (PrimState m) -> m [Word8]
+-- unpack vec = size vec >>= copy 0
+--   where
+--     copy idx len
+--       | idx < len = liftA2 (:) (index idx vec) (copy (succ idx) len)
+--       | otherwise = pure []
