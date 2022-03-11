@@ -27,66 +27,24 @@ common common
     -Wincomplete-uni-patterns
     -Wredundant-constraints
 
-    -- debug
-    -dsuppress-module-prefixes
-    -- -dsuppress-stg-exts
-    -dppr-cols=120
-    -- -ddump-simpl
-    -- -ddump-stg-final
-    -- -ddump-asm
-
-    -- optimizer
-    -O2
-    -fsimplifier-phases=20
-
-    -- -fmax-simplifier-iterations=20
-    -- -j
-    -- -fasm-shortcutting
-    -- -ffun-to-thunk
-    -- -flate-dmd-anal
-    -- -fpedantic-bottoms
-    -- -fspec-constr-keen
-    -- -fstatic-argument-transformation
-
   build-depends:
     , base
-    , containers
     , ghc-prim
     , primitive
-    , vector
 
 library
   import:         common
   hs-source-dirs: src
 
   exposed-modules:
+    Data.ByteVector
     Data.ByteVector.Mutable
     Data.ByteVector.Mutable.Struct
     Data.ByteVector.Mutable.Struct.Rep
     Data.ByteVector.Mutable.Struct.Unlifted
     Data.ByteVector.Mutable.Unlifted
+    Data.Bool.Unlifted
     Data.Int.Unlifted
-
-executable bytevector-example
-  main-is:        Main.hs
-  hs-source-dirs: example
-
-  ghc-options:
-    -Wall
-    -O2
-
-    -- debug
-    -dsuppress-module-prefixes
-    -- -dsuppress-stg-exts
-    -dppr-cols=120
-    -- -ddump-simpl
-    -ddump-stg-final
-
-  build-depends:
-    , base
-    , bytevector
-
-  other-modules:
 
 test-suite test
   import:         common
@@ -107,3 +65,18 @@ test-suite test
     Test.Data.Int.Gen
     Test.Data.Int.Unboxed
     Test.Gen
+
+benchmark benchmark
+  import:         common
+  type:           exitcode-stdio-1.0
+  hs-source-dirs: benchmark
+  main-is:        Bench.hs
+
+  build-depends:
+    , criterion
+    , bytestring
+    , bytevector
+
+  other-modules:
+    Bench.Int
+    Bench.Vector

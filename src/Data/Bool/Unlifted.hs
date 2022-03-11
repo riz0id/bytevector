@@ -7,12 +7,14 @@ module Data.Bool.Unlifted
 
     -- *
     leqInt#,
+    ltInt#,
   )
 where
 
 import GHC.Prim
-import GHC.Exts (Int (I#))
-import GHC.Types (TYPE, RuntimeRep (IntRep))
+import GHC.Types (RuntimeRep (IntRep))
+
+infix 4 `leqInt#`, `ltInt#`
 
 --------------------------------------------------------------------------------
 
@@ -42,5 +44,14 @@ pattern False# = B# 0#
 leqInt# :: Int# -> Int# -> Bool#
 leqInt# a b =
   case a <=# b of
+    1# -> True#
+    _ -> False#
+
+-- | TODO:
+--
+-- @since 1.0.0
+ltInt# :: Int# -> Int# -> Bool#
+ltInt# a b =
+  case a <# b of
     1# -> True#
     _ -> False#

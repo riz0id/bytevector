@@ -1,5 +1,3 @@
-{-# LANGUAGE MagicHash #-}
-
 -- | TODO:
 --
 -- @since 1.0.0
@@ -13,17 +11,37 @@ module Data.ByteVector.Mutable
     resize,
     set,
     get,
+    write,
+    read,
     pushback,
     pack,
+    toByteArray,
   )
 where
 
 import Control.Monad.Primitive
-import Data.Foldable (traverse_)
 import Data.Primitive
 import GHC.Exts
+import GHC.Types
+import GHC.Word
+
+import Prelude hiding (read)
 
 import Data.ByteVector.Mutable.Unlifted
+
+--------------------------------------------------------------------------------
+
+type ST# :: Type -> TYPE r -> Type
+type ST# s a = State# s -> (# State# s, a #)
+
+bytevector ::
+  PrimMonad m =>
+  ST# (PrimState m) (ByteVector# (PrimState m)) ->
+  m (ByteVector (PrimState m))
+bytevector k =
+  primitive \st ->
+    let !(# st', vec #) = k st
+     in (# st', ByteVector vec #)
 
 --------------------------------------------------------------------------------
 
@@ -54,19 +72,13 @@ capacity (ByteVector xs) =
 --
 -- @since 1.0.0
 empty :: PrimMonad m => m (ByteVector (PrimState m))
-empty =
-  primitive \st ->
-    let !(# st', vec #) = empty# st
-     in (# st', ByteVector vec #)
+empty = bytevector empty#
 
 -- | TODO:
 --
 -- @since 1.0.0
 new :: PrimMonad m => Int -> m (ByteVector (PrimState m))
-new (I# len) =
-  primitive \st ->
-    let !(# st', vec #) = new# len st
-     in (# st', ByteVector vec #)
+new (I# len) = bytevector (new# len)
 
 -- | TODO:
 --
@@ -80,8 +92,20 @@ resize (I# len) (ByteVector xs) =
 -- | TODO:
 --
 -- @since 1.0.0
-set :: (PrimMonad m, Prim a) => Int -> a -> ByteVector (PrimState m) -> m ()
-set (I# i) x (ByteVector xs) =
+set :: PrimMonad m => Int -> Word8 -> ByteVector (PrimState m) -> m ()
+set = write
+
+-- | TODO:
+--
+-- @since 1.0.0
+get :: PrimMonad m => Int -> ByteVector (PrimState m) -> m Word8
+get = read
+
+-- | TODO:
+--
+-- @since 1.0.0
+write :: (PrimMonad m, Prim a) => Int -> a -> ByteVector (PrimState m) -> m ()
+write (I# i) x (ByteVector xs) =
   primitive \st ->
     let st' = set# i x xs st
      in (# st', () #)
@@ -89,8 +113,8 @@ set (I# i) x (ByteVector xs) =
 -- | TODO:
 --
 -- @since 1.0.0
-get :: (PrimMonad m, Prim a) => Int -> ByteVector (PrimState m) -> m a
-get (I# i) (ByteVector xs) = primitive (get# i xs)
+read :: (PrimMonad m, Prim a) => Int -> ByteVector (PrimState m) -> m a
+read (I# i) (ByteVector xs) = primitive (get# i xs)
 
 -- | TODO:
 --
@@ -101,13 +125,25 @@ pushback x (ByteVector vec) = primitive \st -> (# pushback# x vec st, () #)
 -- | TODO:
 --
 -- @since 1.0.0
-pack :: (PrimMonad m, Prim a) => [a] -> m (ByteVector (PrimState m))
-pack = \case
-  [] -> empty
-  x0 : xs0 -> do
-    vec <- new (sizeOf x0 + quot (sizeOf x0) 2)
-    traverse_ (`pushback` vec) (x0 : xs0)
-    pure vec
+pack :: PrimMonad m => [Word8] -> m (ByteVector (PrimState m))
+pack ws = bytevector (pack# ws)
+
+-- | TODO:
+--
+-- @since 1.0.0
+-- unpack :: PrimMonad m => ByteVector (PrimState m) -> m [Word8]
+-- unpack = undefined
+
+-- | TODO:
+--
+-- @since 1.0.0
+toByteArray :: PrimMonad m => ByteVector (PrimState m) -> m ByteArray
+toByteArray (ByteVector vec#) =
+  primitive \st ->
+    let !(# st', arr# #) = toByteArray# vec# st
+     in (# st', ByteArray arr# #)
+
+-- toMutableByteArray :: PrimMonad m =>
 
 -- -- | TODO:
 -- --

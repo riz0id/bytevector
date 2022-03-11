@@ -1,5 +1,3 @@
-{-# LANGUAGE MagicHash #-}
-
 -- | TODO:
 --
 -- @since 1.0.0
@@ -16,10 +14,8 @@ module Data.ByteVector.Mutable.Struct
 where
 
 import Data.Kind (Type)
-import Data.Primitive
-import GHC.Prim (State#, Int#)
-import GHC.Exts (Int (I#))
-import GHC.ST
+import Data.Primitive (MutableByteArray (MutableByteArray))
+import GHC.Exts (Int#, State#)
 
 import Data.ByteVector.Mutable.Struct.Unlifted
 
