@@ -14,11 +14,11 @@ common common
   default-language: Haskell2010
 
   default-extensions:
-    BangPatterns BlockArguments DataKinds DerivingVia ExplicitNamespaces GADTs
-    ImportQualifiedPost KindSignatures LambdaCase MagicHash PatternSynonyms
-    PolyKinds RankNTypes RoleAnnotations ScopedTypeVariables
-    StandaloneKindSignatures TupleSections TypeApplications ViewPatterns
-    UnboxedTuples UnliftedNewtypes
+    BangPatterns BlockArguments CPP DataKinds DerivingVia ExplicitNamespaces
+    ForeignFunctionInterface GADTs ImportQualifiedPost KindSignatures LambdaCase
+    MagicHash NegativeLiterals PatternSynonyms PolyKinds RankNTypes
+    RoleAnnotations ScopedTypeVariables StandaloneKindSignatures TupleSections
+    TypeApplications ViewPatterns UnboxedTuples UnliftedNewtypes
 
   ghc-options:
     -Wall
@@ -35,9 +35,7 @@ common common
 library
   import:         common
   hs-source-dirs: src
-
-  ghc-options:
-    -O2
+  ghc-options:    -O2
 
   exposed-modules:
     Data.ByteVector
