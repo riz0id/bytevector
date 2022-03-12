@@ -1,7 +1,7 @@
 cabal-version: 2.4
 
 name:    bytevector
-version: 0.1.0.0
+version: 0.0.0
 
 author:     jake
 maintainer: jacobleach@protonmail.com
