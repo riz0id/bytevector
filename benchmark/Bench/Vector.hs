@@ -3,11 +3,7 @@ module Bench.Vector where
 import Criterion.Main (Benchmark, bench, bgroup, whnf, whnfIO)
 
 import Control.Monad
-import Control.Monad.ST
-import Data.Bits
 import Data.Word
-import Foreign.Storable
-import GHC.Types
 
 import Data.ByteString (ByteString)
 import Data.ByteString qualified as ByteString

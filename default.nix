@@ -15,9 +15,19 @@ let
       packages = pkgsOld.haskell.packages // {
         "${compiler}" = pkgsOld.haskell.packages."${compiler}".override (old: {
           overrides = let
-            packageSources = pkgsNew.haskell.lib.packageSourceOverrides {
-              "bytevector" = ./.;
-            };
+
+            packageSources =
+              let
+                unlifted-bool = builtins.fetchTarball {
+                  # unlifted-bool-1.0.0
+                  url    = "https://github.com/riz0id/unlifted-bool/releases/download/1.0.0/unlifted-bool-1.0.0.tar.gz";
+                  sha256 = "0xv3rd5j3njz76kdla86i0yjgv61fic2qx1pp2bn35r21bl2flxr";
+                };
+
+               in pkgsNew.haskell.lib.packageSourceOverrides {
+                 "bytevector"    = ./.;
+                 "unlifted-bool" = unlifted-bool;
+               };
 
             manualOverrides = haskellPackagesNew: haskellPackagesOld: { };
 

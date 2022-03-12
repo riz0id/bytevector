@@ -36,15 +36,18 @@ library
   import:         common
   hs-source-dirs: src
 
+  ghc-options:
+    -O2
+
   exposed-modules:
     Data.ByteVector
     Data.ByteVector.Mutable
     Data.ByteVector.Mutable.Struct
-    Data.ByteVector.Mutable.Struct.Rep
-    Data.ByteVector.Mutable.Struct.Unlifted
     Data.ByteVector.Mutable.Unlifted
-    Data.Bool.Unlifted
     Data.Int.Unlifted
+
+  build-depends:
+    , unlifted-bool >= 1.0.0
 
 test-suite test
   import:         common
@@ -72,6 +75,9 @@ benchmark benchmark
   hs-source-dirs: benchmark
   main-is:        Bench.hs
 
+  ghc-options:
+    -O2
+
   build-depends:
     , criterion
     , bytestring
@@ -80,3 +86,7 @@ benchmark benchmark
   other-modules:
     Bench.Int
     Bench.Vector
+
+source-repository head
+  type:     git
+  location: https://github.com/riz0id/bytevector

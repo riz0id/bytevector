@@ -24,10 +24,10 @@ import GHC.Prim
 import GHC.Types
 import GHC.Word
 
-import Data.Bool.Unlifted
+import Data.Bool.Unlifted (Bool# (True#, False#), leInt#)
 import Data.Int.Unlifted
-import Data.ByteVector.Mutable.Struct (Struct (Struct), Struct# (Struct#))
-import Data.ByteVector.Mutable.Struct qualified as Struct
+import Data.ByteVector.Mutable.Struct (MutStruct#)
+import Data.ByteVector.Mutable.Struct qualified as MutStruct
 
 --------------------------------------------------------------------------------
 
@@ -46,23 +46,19 @@ scale# x = x +# uncheckedIShiftRA# x 1#
 --
 -- @since 1.0.0
 newtype ByteVector# :: Type -> UnliftedType where
-  ByteVector# :: MutVar# s (Struct s) -> ByteVector# s
+  ByteVector# :: MutStruct# s -> ByteVector# s
 
 -- | TODO:
 --
 -- @since 1.0.0
 sizeof# :: ByteVector# s -> State# s -> (# State# s, Int# #)
-sizeof# (ByteVector# var) st =
-   let !(# st', struct #) = readMutVar# var st
-    in (# st', Struct.sizeof struct #)
+sizeof# (ByteVector# mut) = MutStruct.sizeof# mut
 
 -- | TODO:
 --
 -- @since 1.0.0
 capacity# :: ByteVector# s -> State# s -> (# State# s, Int# #)
-capacity# (ByteVector# var) st =
-  let !(# st', struct #) = readMutVar# var st
-   in Struct.capacity struct st'
+capacity# (ByteVector# var) = MutStruct.capacity# var
 
 -- | TODO:
 --
@@ -77,9 +73,9 @@ unreserved# vec st0 =
 --
 -- @since 1.0.0
 new# :: Int# -> State# s -> (# State# s, ByteVector# s #)
-new# len st =
-  let !(# st0, arr #) = newByteArray# (ceilBytesToWord# len) st
-      !(# st1, mut #) = newMutVar# (Struct (Struct# 0# arr)) st0
+new# cap st =
+  let !(# st0, arr #) = newByteArray# (ceilBytesToWord# cap) st
+      !(# st1, mut #) = MutStruct.new# 0# arr st0
    in (# st1, ByteVector# mut #)
 
 -- | TODO:
@@ -92,10 +88,10 @@ empty# = case bytesInWord of I# s -> new# s
 --
 -- @since 1.0.0
 resize# :: Int# -> ByteVector# s -> State# s -> State# s
-resize# len (ByteVector# var) st =
-  let !(# st0, Struct (Struct# sz mut) #) = readMutVar# var st
-      !(# st1, mut' #) = resizeMutableByteArray# mut (ceilBytesToWord# len) st0
-   in writeMutVar# var (Struct (Struct# sz mut')) st1
+resize# len (ByteVector# mut) st0 =
+  let !(# st1, arr0 #) = MutStruct.readByteArray# mut st0
+      !(# st2, arr1 #) = resizeMutableByteArray# arr0 (ceilBytesToWord# len) st1
+   in MutStruct.writeByteArray# arr1 mut st2
 
 -- | TODO:
 --
@@ -104,7 +100,7 @@ grow# :: Int# -> ByteVector# s -> State# s -> State# s
 grow# bz vec st0 =
   let !(# st1, cz #) = capacity# vec st0
       !(# st2, sz #) = sizeof# vec st1
-   in case cz `leqInt#` bz +# sz of
+   in case cz `leInt#` bz +# sz of
         True# -> resize# (scale# (bz +# sz)) vec st2
         False# -> st2
 
@@ -112,28 +108,27 @@ grow# bz vec st0 =
 --
 -- @since 1.0.0
 set# :: Prim a => Int# -> a -> ByteVector# s -> State# s -> State# s
-set# i x vec st =
-  let !(# st', array #) = toMutableByteArray# vec st
-   in writeByteArray# array i x st'
+set# i x (ByteVector# mut) st =
+  let !(# st', arr #) = MutStruct.readByteArray# mut st
+   in writeByteArray# arr i x st'
 
 -- | TODO:
 --
 -- @since 1.0.0
 get# :: Prim a => Int# -> ByteVector# s -> State# s -> (# State# s, a #)
-get# i xs st =
-  let !(# st', array #) = toMutableByteArray# xs st
-   in readByteArray# array i st'
+get# i (ByteVector# mut) st =
+  let !(# st', arr #) = MutStruct.readByteArray# mut st
+   in readByteArray# arr i st'
 
 -- | TODO:
 --
 -- @since 1.0.0
 pushback# :: Prim a => a -> ByteVector# s -> State# s -> State# s
-pushback# x vec@(ByteVector# var) st0 =
-  let st1 = grow# (unI# (sizeOf x)) vec st0
-   in case readMutVar# var st1 of
-        (# st2, Struct (Struct# len mut) #) ->
-          let st3 = set# len x vec st2
-           in writeMutVar# var (Struct (Struct# (1# +# len) mut)) st3
+pushback# x vec@(ByteVector# mut) st0 =
+  let !(# st1, len #) = sizeof# vec st0
+      st2 = grow# (unI# (sizeOf x)) vec st1
+      st3 = MutStruct.modifyArraySize# (1# +#) mut st2
+   in set# len x vec st3
 
 -- | TODO:
 --
@@ -143,11 +138,11 @@ pack# [] st0 = empty# st0
 pack# ws st0 =
   -- NOTE: ceilBytesToWord# and scale# do not commute. ceilBytesToWord# must be
   -- applied first to ensure @cz@ is always aligned to platform word size.
-  let !(# st1, mut #) = newByteArray# cz st0
-      cz = ceilBytesToWord# (scale# sz)
+  let cz = ceilBytesToWord# (scale# sz)
       sz = unI# (length ws)
-   in case newMutVar# (Struct (Struct# sz mut)) (foldcopy# 0# ws mut st1) of
-        (# st2, var #) -> (# st2, ByteVector# var #)
+      !(# st1, arr #) = newByteArray# cz st0
+      !(# st2, mut #) = MutStruct.new# sz arr (foldcopy# 0# ws arr st1)
+   in (# st2, ByteVector# mut #)
   where
     foldcopy# _ [] _ st = st
     foldcopy# i (W8# x : xs) mut st =
@@ -159,15 +154,12 @@ pack# ws st0 =
 -- @since 1.0.0
 -- FIXME: this should probably copy, doesn't make sense to expose the internals
 toMutableByteArray# :: ByteVector# s -> State# s -> (# State# s, MutableByteArray# s #)
-toMutableByteArray# (ByteVector# var) st =
-  let !(# st', struct #) = readMutVar# var st
-   in case Struct.toMutableByteArray struct of
-        MutableByteArray array -> (# st', array #)
+toMutableByteArray# (ByteVector# mut) = MutStruct.readByteArray# mut
 
 toByteArray# :: ByteVector# s -> State# s -> (# State# s, ByteArray# #)
-toByteArray# (ByteVector# var) st =
-  case readMutVar# var st of
-    (# st0, Struct (Struct# len src#) #) ->
-      let !(# st1, dst# #) = newByteArray# len st0
-          st2 = copyMutableByteArray# src# 0# dst# 0# len st1
-       in unsafeFreezeByteArray# dst# st2
+toByteArray# (ByteVector# mut) st0 =
+  let !(# st1, len #) = MutStruct.sizeof# mut st0
+      !(# st2, src #) = MutStruct.readByteArray# mut st1
+      !(# st3, dst #) = newByteArray# len st2
+   in case copyMutableByteArray# src 0# dst 0# len st3 of
+        st4 -> unsafeFreezeByteArray# dst st4

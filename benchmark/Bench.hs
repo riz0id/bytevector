@@ -1,7 +1,6 @@
 module Main (main) where
 
-import Criterion.Main (Benchmark, bench, bgroup, defaultMain, whnf)
-import Criterion.Types ()
+import Criterion.Main (defaultMain)
 
 import Bench.Int qualified
 import Bench.Vector qualified
