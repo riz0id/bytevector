@@ -1,6 +1,6 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 
-module Test.Data.ByteVector.Conversion (tests) where
+module Test.Data.ByteVector.Conversion () where
 
 import Hedgehog
 import Test.Tasty
@@ -15,16 +15,16 @@ import Data.ByteVector
 
 --------------------------------------------------------------------------------
 
-tests :: TestTree
-tests =
-  testGroup
-    "Data.ByteVector: Conversion Tests"
-    [ testProperty "round trip: [Word8]" trip'list'word8
-    ]
+-- tests :: TestTree
+-- tests =
+--   testGroup
+--     "Data.ByteVector: Conversion Tests"
+--     [ testProperty "round trip: [Word8]" trip'list'word8
+--     ]
 
 --------------------------------------------------------------------------------
 
-trip'list'word8 :: Property
-trip'list'word8 = property do
-  xs <- forAll Gen.list'word8
-  tripping xs packW8 (Identity . unpackW8)
+-- trip'list'word8 :: Property
+-- trip'list'word8 = property do
+--   xs <- forAll Gen.list'word8
+--   tripping xs packW8 (Identity . unpackW8)

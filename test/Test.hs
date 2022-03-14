@@ -4,7 +4,7 @@ module Main (main) where
 import Test.Tasty (TestTree, defaultMain, testGroup)
 
 import qualified Test.Data.ByteVector
-import qualified Test.Data.Int.Unboxed
+import qualified Test.Data.Int.Unlifted
 
 --------------------------------------------------------------------------------
 
@@ -16,5 +16,5 @@ testTree =
   testGroup
     "bytevector tests"
     [ Test.Data.ByteVector.tests
-    , Test.Data.Int.Unboxed.tests
+    , Test.Data.Int.Unlifted.tests
     ]

@@ -64,8 +64,7 @@ test-suite test
     Test.Data.ByteVector.Conversion
     Test.Data.ByteVector.Gen
     Test.Data.Int.Gen
-    Test.Data.Int.Unboxed
-    Test.Gen
+    Test.Data.Int.Unlifted
 
 benchmark benchmark
   import:         common

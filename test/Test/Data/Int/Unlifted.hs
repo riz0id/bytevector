@@ -1,7 +1,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE MagicHash #-}
 
-module Test.Data.Int.Unboxed (tests) where
+module Test.Data.Int.Unlifted (tests) where
 
 import Hedgehog (Property, PropertyT, forAll, property, (===))
 import Hedgehog.Gen qualified as Gen
@@ -14,7 +14,7 @@ import GHC.Exts qualified as Exts
 -- local modules
 import Test.Data.Int.Gen qualified as Gen
 
-import Data.Int.Unboxed (maxInt#, minInt#)
+import Data.Int.Unlifted (maxInt#, minInt#)
 
 --------------------------------------------------------------------------------
 
