@@ -82,7 +82,7 @@ new# cap st =
 --
 -- @since 1.0.0
 empty# :: State# s -> (# State# s, ByteVector# s #)
-empty# = case bytesInWord of I# s -> new# s
+empty# = new# (ceilBytesToWord# 1#)
 
 -- | TODO:
 --

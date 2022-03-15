@@ -6,8 +6,6 @@
 -- @since 1.0.0
 module Data.Int.Unlifted
   ( -- * Byte
-    bytesInWord,
-    ceilBytesToWord,
     ceilBytesToWord#,
     bytesToWords#,
 
@@ -19,7 +17,6 @@ module Data.Int.Unlifted
   )
 where
 
-import GHC.Prim
 import GHC.Exts
 
 -- defines the `WORD_SIZE_IN_BITS` macro
@@ -30,19 +27,8 @@ import GHC.Exts
 -- | TODO:
 --
 -- @since 1.0.0
-bytesInWord :: Int
-bytesInWord = bitsInWord `quot` 8
-
-ceilBytesToWord :: Int -> Int
-ceilBytesToWord (I# x) = I# (ceilBytesToWord# x)
-
--- | TODO:
---
--- @since 1.0.0
 ceilBytesToWord# :: Int# -> Int#
-ceilBytesToWord# x =
-  let !(I# s) = bytesInWord
-   in bytesToWords# x *# s
+ceilBytesToWord# x = bytesToWords# x *# WORD_SIZE_IN_BITS#
 
 -- | Converts a unit in number of bytes to number of words. The provided number
 -- must be positive to yield a correct result.
@@ -60,9 +46,7 @@ ceilBytesToWord# x =
 --
 -- @since 1.0.0
 bytesToWords# :: Int# -> Int#
-bytesToWords# n =
-  let !(I# s) = bytesInWord
-   in quotInt# (n +# s -# 1#) s
+bytesToWords# n = quotInt# (n +# WORD_SIZE_IN_BITS# -# 1#) WORD_SIZE_IN_BITS#
 
 --------------------------------------------------------------------------------
 -- Minimum & Maximum
@@ -120,37 +104,14 @@ minInt# a b =
   -- See [NOTE: Compute minimum and maximum bitwise]
   let mask = shiftIWordR# (a -# b)
    in b -# (andI# (b -# a) mask)
-{-# INLINEABLE [0] minInt# #-}
-
-{-# RULES
-"minInt# 0# b" forall b. minInt# 0# b = negInt# b
-"minInt# a 0#" forall a. minInt# a 0# = negInt# a
-  #-}
 
 --------------------------------------------------------------------------------
+--
 -- Internal
-
--- See [NOTE: Word size constant folding]
-#if (WORD_SIZE_IN_BITS == 64)
-
-bitsInWord :: Int
-bitsInWord = 64
-{-# INLINE CONLIKE [0] bitsInWord #-}
-
-#elif (WORD_SIZE_IN_BITS == 32)
-
-bitsInWord :: Int
-bitsInWord = 32
-{-# INLINE CONLIKE [0] bitsInWord #-}
-
-#else
-# error bytevector depends on 32-bit or 64-bit integers
-#endif
+--
 
 shiftIWordR# :: Int# -> Int#
-shiftIWordR# x = case bitsInWord of
-  I# s -> uncheckedIShiftRA# x (s -# 1#)
-{-# INLINE CONLIKE [0] shiftIWordR# #-}
+shiftIWordR# x = uncheckedIShiftRA# x (WORD_SIZE_IN_BITS# -# 1#)
 
 --------------------------------------------------------------------------------
 
